@@ -33,12 +33,23 @@ serves as the architecture reference for Phase 3.
 
 ---
 
-### Phase 2 — Orchestrator + Worker Pattern *(coming next)*
+### Phase 2 — Orchestrator + Worker Pattern ✅
 > *Core concept: fan-out, parallel execution, result aggregation*
 
-Planned projects:
-- **PR Reviewer with Specialists** — orchestrator spawns Security, Coverage, and
-  Style agents in parallel; aggregates findings by severity
+**Project: PR Reviewer with Specialists** ([`scripts/pr_review.py`](scripts/pr_review.py))
+
+An orchestrator that spawns three specialist agents in parallel — Security,
+Coverage, and Style — each running its own independent agentic loop. Results
+are aggregated into a single markdown report sorted by severity.
+
+Key patterns introduced:
+- `ThreadPoolExecutor` fan-out: all agents start simultaneously, not sequentially
+- `as_completed()`: process each result as it arrives, not in submission order
+- One handler instance per agent: thread-safe by isolation, not by locking
+- Shared toolset, different system prompts: capability vs behaviour separation
+- Generic `run_specialist()` loop: Phase 1's loop extracted and parameterised
+
+Planned (next):
 - **Research → Draft → Edit Pipeline** — three sequential agents passing
   artifacts to each other via a shared workspace
 
@@ -72,7 +83,7 @@ Agent-001/
 ├── .gitignore
 └── scripts/
     ├── detective.py        ← Phase 1: File System Detective agent
-    └── (more to come)
+    └── pr_review.py        ← Phase 2: PR Reviewer with Specialists
 ```
 
 ---
@@ -105,6 +116,11 @@ python3 scripts/detective.py /path/to/some/project --verbose
 | System prompt as reasoning scaffold | `SYSTEM_PROMPT` constant |
 | Runtime state injection into tool results | budget footer in `read_file` |
 | State machine design | `TDD_WORKFLOW.md` |
+| Parallel agent fan-out | `pr_review.py` — `run_review()` |
+| `as_completed()` result collection | `pr_review.py` — orchestrator loop |
+| Thread-safe isolation via separate instances | `SpecialistHandler` per agent |
+| Capability vs behaviour separation | shared `TOOLS`, different prompts |
+| Generic reusable agent loop | `run_specialist()` function |
 
 ---
 
