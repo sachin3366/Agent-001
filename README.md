@@ -49,9 +49,18 @@ Key patterns introduced:
 - Shared toolset, different system prompts: capability vs behaviour separation
 - Generic `run_specialist()` loop: Phase 1's loop extracted and parameterised
 
-Planned (next):
-- **Research → Draft → Edit Pipeline** — three sequential agents passing
-  artifacts to each other via a shared workspace
+**Project: Research → Draft → Edit Pipeline** ([`scripts/pipeline.py`](scripts/pipeline.py))
+
+Three agents running sequentially — Research saves `findings.json`, Writer
+reads it and saves `draft.md`, Editor reads both and saves `final.md`. Each
+agent is stateless and only sees what the pipeline hands it.
+
+Key patterns introduced:
+- Sequential orchestration: each stage waits for the previous one to finish
+- Artifact hand-off: outputs saved to disk, injected into next agent's initial message
+- Closure-based dispatch: replaces the handler class when a stage has only one tool
+- Data dependency drives the sequence: agents that share data must be sequential;
+  agents that don't share data can be parallel (see `pr_review.py`)
 
 ---
 
@@ -83,7 +92,8 @@ Agent-001/
 ├── .gitignore
 └── scripts/
     ├── detective.py        ← Phase 1: File System Detective agent
-    └── pr_review.py        ← Phase 2: PR Reviewer with Specialists
+    ├── pr_review.py        ← Phase 2A: PR Reviewer with Specialists (parallel)
+    └── pipeline.py         ← Phase 2B: Research → Draft → Edit (sequential)
 ```
 
 ---
@@ -121,6 +131,10 @@ python3 scripts/detective.py /path/to/some/project --verbose
 | Thread-safe isolation via separate instances | `SpecialistHandler` per agent |
 | Capability vs behaviour separation | shared `TOOLS`, different prompts |
 | Generic reusable agent loop | `run_specialist()` function |
+| Sequential pipeline orchestration | `pipeline.py` — `run_pipeline()` |
+| Artifact hand-off between agents | findings.json → draft.md → final.md |
+| Closure-based tool dispatch | `run_research/writer/editor` dispatch closures |
+| Data dependency → sequence vs parallel | `run_pipeline()` comments |
 
 ---
 
